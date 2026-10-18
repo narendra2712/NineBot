@@ -1,9 +1,13 @@
 import os
+import secrets
+from datetime import timedelta
 
 import bleach
 import markdown
+from cachelib.file import FileSystemCache
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, session
+from flask_session import Session
 from groq import APIStatusError, Groq, GroqError
 
 load_dotenv()
@@ -11,6 +15,24 @@ load_dotenv()
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 1_000_000
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config.update(
+    SECRET_KEY=os.getenv("SESSION_SECRET") or secrets.token_hex(32),
+    SESSION_TYPE="cachelib",
+    SESSION_CACHELIB=FileSystemCache(
+        cache_dir=os.getenv(
+            "SESSION_FILE_DIR",
+            os.path.join(app.instance_path, "sessions"),
+        ),
+        threshold=1000,
+        default_timeout=24 * 60 * 60,
+    ),
+    SESSION_PERMANENT=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=24),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true",
+)
+Session(app)
 
 PREFERRED_MODELS = (
     "openai/gpt-oss-120b",
@@ -18,6 +40,21 @@ PREFERRED_MODELS = (
     "openai/gpt-oss-20b",
 )
 MAX_MODEL_ATTEMPTS = 5
+MAX_HISTORY_MESSAGES = 20
+
+
+def get_session_history():
+    history = session.get("chat_history", [])
+    if not isinstance(history, list):
+        app.logger.warning("Discarding malformed chat history in server-side session")
+        return []
+    return [
+        message
+        for message in history
+        if isinstance(message, dict)
+        and message.get("role") in {"user", "assistant"}
+        and isinstance(message.get("content"), str)
+    ][-MAX_HISTORY_MESSAGES:]
 
 
 @app.get("/")
@@ -105,6 +142,17 @@ def create_completion_with_fallback(client, model, messages):
     raise RuntimeError("No active Groq model could handle the request.")
 
 
+@app.get("/api/history")
+def get_history():
+    return jsonify(messages=get_session_history())
+
+
+@app.delete("/api/history")
+def clear_history():
+    session.pop("chat_history", None)
+    return jsonify(messages=[])
+
+
 @app.post("/api/chat")
 def chat():
     api_key = os.getenv("GROQ_API_KEY")
@@ -112,24 +160,12 @@ def chat():
         return jsonify(error="Set GROQ_API_KEY in the .env file before chatting."), 503
 
     data = request.get_json(silent=True)
-    messages = data.get("messages") if isinstance(data, dict) else None
-    if not isinstance(messages, list) or not messages or len(messages) > 40:
-        return jsonify(error="Send between 1 and 40 conversation messages."), 400
+    content = data.get("message") if isinstance(data, dict) else None
+    if not isinstance(content, str) or not content.strip() or len(content) > 12_000:
+        return jsonify(error="Message must contain 1 to 12,000 characters."), 400
 
-    validated_messages = []
-    for message in messages:
-        if not isinstance(message, dict):
-            return jsonify(error="Each message must contain a role and text content."), 400
-        role = message.get("role")
-        content = message.get("content")
-        if role not in {"user", "assistant"} or not isinstance(content, str):
-            return jsonify(error="Messages must have a user or assistant role and text content."), 400
-        if not content.strip() or len(content) > 12_000:
-            return jsonify(error="Messages must contain 1 to 12,000 characters."), 400
-        validated_messages.append({"role": role, "content": content})
-
-    if validated_messages[-1]["role"] != "user":
-        return jsonify(error="The latest conversation message must be from you."), 400
+    history = get_session_history()[-MAX_HISTORY_MESSAGES + 1 :]
+    messages = [*history, {"role": "user", "content": content}]
 
     system_prompt = os.getenv(
         "SYSTEM_PROMPT",
@@ -137,9 +173,12 @@ def chat():
     )
     model = os.getenv("GROQ_MODEL", PREFERRED_MODELS[0])
     client = Groq(api_key=api_key)
-    messages = [{"role": "system", "content": system_prompt}, *validated_messages]
     try:
-        response = create_completion_with_fallback(client, model, messages)
+        response = create_completion_with_fallback(
+            client,
+            model,
+            [{"role": "system", "content": system_prompt}, *messages],
+        )
     except APIStatusError as exc:
         app.logger.exception("Groq chat request failed after model fallback")
         if exc.status_code == 429:
@@ -155,6 +194,9 @@ def chat():
         return jsonify(error=str(exc)), 502
 
     answer = response.choices[0].message.content or ""
+    history = [*messages, {"role": "assistant", "content": answer}]
+    session["chat_history"] = history[-MAX_HISTORY_MESSAGES:]
+    session.permanent = True
     formatted_answer = markdown.markdown(
         answer,
         extensions=["fenced_code", "sane_lists", "tables"],
@@ -170,7 +212,11 @@ def chat():
         protocols={"http", "https", "mailto"},
         strip=True,
     )
-    return jsonify(reply=answer, reply_html=safe_answer)
+    return jsonify(
+        reply=answer,
+        reply_html=safe_answer,
+        messages=session["chat_history"],
+    )
 
 
 @app.errorhandler(413)

@@ -6,6 +6,8 @@ const messagesElement = document.querySelector("#messages");
 const welcome = document.querySelector("#welcome");
 const errorBanner = document.querySelector("#error");
 const conversation = [];
+sendButton.disabled = true;
+clearButton.disabled = true;
 
 function addMessage(role, content) {
   const message = document.createElement("article");
@@ -30,6 +32,37 @@ function resizePrompt() {
   promptInput.style.height = `${Math.min(promptInput.scrollHeight, 180)}px`;
 }
 
+async function restoreHistory() {
+  try {
+    const response = await fetch("/api/history");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not restore this chat.");
+    if (!Array.isArray(data.messages)) {
+      throw new Error("The server returned invalid chat history.");
+    }
+
+    for (const message of data.messages) {
+      if (
+        !message ||
+        !["user", "assistant"].includes(message.role) ||
+        typeof message.content !== "string"
+      ) {
+        throw new Error("The server returned invalid chat history.");
+      }
+      conversation.push(message);
+      addMessage(message.role, message.content);
+    }
+    welcome.hidden = conversation.length > 0;
+  } catch (error) {
+    errorBanner.textContent = error.message || "Could not restore this chat.";
+    errorBanner.hidden = false;
+  } finally {
+    sendButton.disabled = false;
+    clearButton.disabled = false;
+  }
+}
+
+restoreHistory();
 promptInput.addEventListener("input", resizePrompt);
 
 document.querySelectorAll(".suggestion").forEach((button) => {
@@ -40,12 +73,25 @@ document.querySelectorAll(".suggestion").forEach((button) => {
   });
 });
 
-clearButton.addEventListener("click", () => {
-  conversation.length = 0;
-  messagesElement.replaceChildren();
-  welcome.hidden = false;
+clearButton.addEventListener("click", async () => {
+  if (clearButton.disabled) return;
+  clearButton.disabled = true;
   errorBanner.hidden = true;
-  promptInput.focus();
+  try {
+    const response = await fetch("/api/history", { method: "DELETE" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not clear this chat.");
+
+    conversation.length = 0;
+    messagesElement.replaceChildren();
+    welcome.hidden = false;
+    promptInput.focus();
+  } catch (error) {
+    errorBanner.textContent = error.message || "Could not clear this chat.";
+    errorBanner.hidden = false;
+  } finally {
+    clearButton.disabled = false;
+  }
 });
 
 form.addEventListener("submit", async (event) => {
@@ -67,7 +113,7 @@ form.addEventListener("submit", async (event) => {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: conversation }),
+      body: JSON.stringify({ message: content }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "The request failed.");
@@ -81,6 +127,9 @@ form.addEventListener("submit", async (event) => {
       pending.textContent = data.reply;
     }
     conversation.push({ role: "assistant", content: data.reply });
+    if (Array.isArray(data.messages)) {
+      conversation.splice(0, conversation.length, ...data.messages);
+    }
   } catch (error) {
     pending.closest(".message").remove();
     conversation.pop();

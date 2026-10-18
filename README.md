@@ -18,7 +18,7 @@ A small Groq-powered chat web app built with Flask.
    Copy-Item .env.example .env
    ```
 
-3. Put your Groq API key in `.env`, then start the app:
+3. Put your Groq API key and a unique `SESSION_SECRET` in `.env`, then start the app. Generate a secret with `python -c "import secrets; print(secrets.token_hex(32))"`:
 
    ```powershell
    python app.py
@@ -34,6 +34,8 @@ A small Groq-powered chat web app built with Flask.
 4. Deploy the `ninebot` web service. Render provides its public URL after the deploy succeeds.
 
 The Groq API key is read on the server and is not sent to the browser. This app uses Groq-hosted inference and prompt-based behavior; it does not fine-tune model weights.
+
+Chat history is stored in a server-side session for up to 24 hours and restored after a page refresh. The rolling memory sends at most the latest 20 user/assistant messages to Groq. Use **New chat** to clear the session. On Render's free service, session data is temporary and can be lost when the service restarts or redeploys; persistent cross-deploy history requires a database-backed session store.
 
 ## Model selection and fallback
 

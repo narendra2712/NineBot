@@ -13,3 +13,7 @@ services:
         value: openai/gpt-oss-120b
       - key: SYSTEM_PROMPT
         value: You are a helpful assistant. Answer clearly and accurately.
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
