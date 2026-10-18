@@ -15,7 +15,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 @app.get("/")
 def index():
-    return render_template("index.html", model=os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"))
+    return render_template("index.html")
 
 
 @app.post("/api/chat")

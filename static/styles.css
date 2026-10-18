@@ -64,25 +64,6 @@ button, textarea { font: inherit; }
   font: 800 17px "Manrope", sans-serif;
 }
 
-.model-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 30px;
-  background: rgba(255, 255, 255, .55);
-  color: #62645f;
-  font-size: 12px;
-}
-
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #71a94e;
-}
-
 .chat-panel {
   flex: 1;
   width: min(100%, 720px);
@@ -285,7 +266,6 @@ textarea::placeholder { color: #a0a19b; }
 @media (max-width: 600px) {
   .app-shell { padding: 0 17px; }
   .topbar { height: 64px; }
-  .model-pill { max-width: 57%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .chat-panel { padding-top: 27px; }
   .welcome { padding-bottom: 25px; }
   .suggestions { gap: 7px; }
