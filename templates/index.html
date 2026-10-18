@@ -4,15 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f5f5f2">
-    <title>Groq Chat</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>NineBot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=4) }}">
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
-        <a class="brand" href="/" aria-label="Groq Chat home">
-          <span class="brand-mark" aria-hidden="true">G</span>
-          <span>Groq Chat</span>
+        <a class="brand" href="/" aria-label="NineBot home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40" focusable="false">
+              <circle class="logo-orbit" cx="20" cy="20" r="16.5"></circle>
+              <path class="logo-letter" d="M12 28V12l16 16V12"></path>
+              <path class="logo-spark" d="M30 8V4m-2 2h4"></path>
+            </svg>
+          </span>
+          <span>NineBot</span>
         </a>
       </header>
 
@@ -35,7 +41,7 @@
       <form class="composer" id="chat-form">
         <label class="visually-hidden" for="prompt">Message</label>
         <textarea id="prompt" name="prompt" rows="1" maxlength="12000"
-          placeholder="Message Groq Chat..." required></textarea>
+          placeholder="Message NineBot..." required></textarea>
         <div class="composer-footer">
           <span class="privacy-note">Your API key stays on this computer.</span>
           <button class="send-button" id="send" type="submit" aria-label="Send message">
