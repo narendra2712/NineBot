@@ -2,6 +2,8 @@ const form = document.querySelector("#chat-form");
 const promptInput = document.querySelector("#prompt");
 const sendButton = document.querySelector("#send");
 const clearButton = document.querySelector("#clear");
+const translateButton = document.querySelector("#translate-chat");
+const teluguReplies = document.querySelector("#telugu-replies");
 const messagesElement = document.querySelector("#messages");
 const welcome = document.querySelector("#welcome");
 const errorBanner = document.querySelector("#error");
@@ -10,6 +12,7 @@ const transcriptionModel = document.querySelector("#transcription-model");
 const speechModel = document.querySelector("#speech-model");
 const speechVoice = document.querySelector("#speech-voice");
 const conversation = [];
+let currentTranslations = null;
 
 function showError(message) {
   errorBanner.textContent = message;
@@ -81,6 +84,36 @@ function addMessage(role, content) {
   messagesElement.append(message);
   message.scrollIntoView({ behavior: "smooth", block: "end" });
   return text;
+}
+
+function clearTranslations() {
+  messagesElement.querySelectorAll(".message-translation").forEach((element) => element.remove());
+  currentTranslations = null;
+  translateButton.textContent = "Translate chat to Telugu";
+}
+
+function displayTranslations(translations, visible) {
+  const messageElements = messagesElement.querySelectorAll(".message");
+  translations.forEach((translation, index) => {
+    const message = messageElements[index];
+    let translated = message.querySelector(".message-translation");
+    if (!translated) {
+      translated = document.createElement("div");
+      translated.className = "message-translation";
+      const label = document.createElement("div");
+      label.className = "message-label";
+      label.textContent = "Telugu";
+      const content = document.createElement("div");
+      content.className = "message-content translated-content";
+      content.textContent = translation;
+      translated.append(label, content);
+      message.append(translated);
+    } else {
+      translated.querySelector(".translated-content").textContent = translation;
+    }
+    translated.hidden = !visible;
+  });
+  translateButton.textContent = visible ? "Hide Telugu translation" : "Show Telugu translation";
 }
 
 function resizePrompt() {
@@ -174,10 +207,20 @@ async function restoreHistory() {
       addMessage(message.role, message.content);
     }
     welcome.hidden = conversation.length > 0;
+    translateButton.disabled = conversation.length === 0;
   } catch (error) {
     showError(error.message || "Could not restore this chat.");
   } finally {
     clearButton.disabled = false;
+  }
+}
+
+async function restorePreferences() {
+  try {
+    const data = await readJson(await fetch("/api/preferences"));
+    teluguReplies.checked = data.telugu_replies === true;
+  } catch (error) {
+    showError(error.message || "Could not restore conversation preferences.");
   }
 }
 
@@ -237,12 +280,71 @@ clearButton.addEventListener("click", async () => {
     await readJson(await fetch("/api/history", { method: "DELETE" }));
     conversation.length = 0;
     messagesElement.replaceChildren();
+    clearTranslations();
+    translateButton.disabled = true;
     welcome.hidden = false;
     promptInput.focus();
   } catch (error) {
     showError(error.message || "Could not clear this chat.");
   } finally {
     clearButton.disabled = false;
+  }
+});
+
+translateButton.addEventListener("click", async () => {
+  if (translateButton.disabled) return;
+  if (currentTranslations) {
+    const visible = translateButton.textContent === "Show Telugu translation";
+    displayTranslations(currentTranslations, visible);
+    return;
+  }
+
+  translateButton.disabled = true;
+  translateButton.textContent = "Translating...";
+  hideError();
+  try {
+    const data = await readJson(await fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: chatModel.value }),
+    }));
+    if (
+      !Array.isArray(data.messages) ||
+      data.messages.length !== conversation.length ||
+      data.messages.some(
+        (message, index) =>
+          !message ||
+          message.role !== conversation[index].role ||
+          typeof message.translation !== "string",
+      )
+    ) {
+      throw new Error("The server returned an invalid conversation translation.");
+    }
+    currentTranslations = data.messages.map((message) => message.translation);
+    displayTranslations(currentTranslations, true);
+  } catch (error) {
+    translateButton.textContent = "Translate chat to Telugu";
+    showError(error.message || "Could not translate this conversation.");
+  } finally {
+    translateButton.disabled = conversation.length === 0;
+  }
+});
+
+teluguReplies.addEventListener("change", async () => {
+  teluguReplies.disabled = true;
+  hideError();
+  try {
+    const data = await readJson(await fetch("/api/preferences", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ telugu_replies: teluguReplies.checked }),
+    }));
+    teluguReplies.checked = data.telugu_replies === true;
+  } catch (error) {
+    teluguReplies.checked = !teluguReplies.checked;
+    showError(error.message || "Could not update Telugu reply preference.");
+  } finally {
+    teluguReplies.disabled = false;
   }
 });
 
@@ -253,8 +355,10 @@ form.addEventListener("submit", async (event) => {
 
   welcome.hidden = true;
   hideError();
+  clearTranslations();
+  translateButton.disabled = true;
   conversation.push({ role: "user", content });
-  addMessage("user", content);
+  const userMessage = addMessage("user", content);
   promptInput.value = "";
   resizePrompt();
   sendButton.disabled = true;
@@ -280,9 +384,12 @@ form.addEventListener("submit", async (event) => {
     if (Array.isArray(data.messages)) {
       conversation.splice(0, conversation.length, ...data.messages);
     }
+    translateButton.disabled = conversation.length === 0;
   } catch (error) {
     pending.closest(".message").remove();
+    userMessage.closest(".message").remove();
     conversation.pop();
+    translateButton.disabled = conversation.length === 0;
     showError(error.message || "Could not reach the server.");
   } finally {
     sendButton.disabled = chatModel.options.length === 0;
@@ -390,3 +497,4 @@ document.querySelector("#speech-form").addEventListener("submit", async (event) 
 
 loadModels();
 restoreHistory();
+restorePreferences();

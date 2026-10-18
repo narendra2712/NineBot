@@ -13,7 +13,7 @@
         document.documentElement.dataset.theme = "light";
       }
     </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=6) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=7) }}">
   </head>
   <body>
     <main class="app-shell">
@@ -119,7 +119,17 @@
         </form>
         <div class="panel-footer">
           <span>Responses may be inaccurate. Verify important information.</span>
-          <button id="clear" class="text-button" type="button" disabled>New chat</button>
+          <div class="conversation-controls">
+            <button id="translate-chat" class="text-button" type="button" disabled>
+              Translate chat to Telugu
+            </button>
+            <label class="telugu-toggle" for="telugu-replies">
+              <input id="telugu-replies" type="checkbox" role="switch" aria-label="Telugu replies">
+              <span class="toggle-track" aria-hidden="true"></span>
+              <span>Telugu replies</span>
+            </label>
+            <button id="clear" class="text-button" type="button" disabled>New chat</button>
+          </div>
         </div>
       </section>
 
@@ -203,6 +213,6 @@
         </form>
       </section>
     </main>
-    <script src="{{ url_for('static', filename='chat.js', v=7) }}" defer></script>
+    <script src="{{ url_for('static', filename='chat.js', v=8) }}" defer></script>
   </body>
 </html>

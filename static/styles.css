@@ -350,6 +350,14 @@ select:disabled { opacity: .62; cursor: wait; }
   background: var(--user-bubble);
 }
 
+.message-translation { margin-top: 10px; }
+.message-translation[hidden] { display: none; }
+.translated-content {
+  border-color: color-mix(in srgb, var(--accent-ink) 25%, var(--line));
+  background: var(--surface-muted);
+}
+.message.user .translated-content { border-radius: 15px 5px 15px 15px; }
+
 .composer {
   width: 100%;
   padding: 12px 13px 9px 16px;
@@ -404,6 +412,42 @@ textarea::placeholder { color: var(--subtle); }
   color: var(--subtle);
   font-size: 10px;
 }
+
+.conversation-controls { display: flex; align-items: center; justify-content: flex-end; gap: 15px; }
+.telugu-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.telugu-toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.toggle-track {
+  width: 30px;
+  height: 17px;
+  position: relative;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transition: background .16s ease;
+}
+.toggle-track::after {
+  width: 11px;
+  height: 11px;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  border-radius: 50%;
+  background: var(--surface);
+  content: "";
+  transition: transform .16s ease;
+}
+.telugu-toggle input:checked + .toggle-track { background: var(--accent-ink); }
+.telugu-toggle input:checked + .toggle-track::after { transform: translateX(13px); background: #fff; }
+.telugu-toggle input:focus-visible + .toggle-track { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.telugu-toggle input:disabled + .toggle-track { opacity: .55; }
 
 .text-button { padding: 4px 0; border: 0; background: transparent; color: var(--accent-ink); font-size: 11px; font-weight: 600; cursor: pointer; }
 .text-button:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -484,6 +528,8 @@ textarea::placeholder { color: var(--subtle); }
   .mode-tab { flex: 1; justify-content: center; padding: 0 7px; font-size: 11px; }
   .tool-heading { min-height: 88px; gap: 12px; }
   .tool-heading h2 { font-size: 18px; }
+  .panel-footer { align-items: flex-start; flex-direction: column; }
+  .conversation-controls { width: 100%; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
   .model-control { min-width: 0; width: min(48%, 220px); }
   select { font-size: 11px; }
   .chat-panel { min-height: 310px; }

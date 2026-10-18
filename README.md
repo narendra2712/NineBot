@@ -37,6 +37,8 @@ The Groq API key is read on the server and is not sent to the browser. This app 
 
 Chat history is stored in a server-side session for up to 24 hours and restored after a page refresh. The rolling memory sends at most the latest 20 user/assistant messages to Groq. Use **New chat** to clear the session. The selected chat model and light/dark theme are remembered in the browser. On Render's free service, session data is temporary and can be lost when the service restarts or redeploys; persistent cross-deploy history requires a database-backed session store.
 
+Use **Translate chat to Telugu** to show a Telugu translation under each original message without changing the saved conversation. Enable **Telugu replies** to have future assistant responses written in Telugu; this preference is stored in the current server-side browser session. Both features use the selected Groq chat model, and translation is limited to conversations with up to 30,000 characters.
+
 ## Model selection and fallback
 
 The chat model selector is populated from Groq's active models API. By default, Nano Assistant prefers `openai/gpt-oss-120b`; set `GROQ_MODEL` to choose a different default. If the selected model is unavailable, deprecated, or rate-limited, chat tries other active models. Rate limits can apply across your Groq organization, so switching models may not avoid an organization-wide limit.
