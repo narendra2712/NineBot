@@ -35,8 +35,16 @@ A small Groq-powered chat web app built with Flask.
 
 The Groq API key is read on the server and is not sent to the browser. This app uses Groq-hosted inference and prompt-based behavior; it does not fine-tune model weights.
 
-Chat history is stored in a server-side session for up to 24 hours and restored after a page refresh. The rolling memory sends at most the latest 20 user/assistant messages to Groq. Use **New chat** to clear the session. On Render's free service, session data is temporary and can be lost when the service restarts or redeploys; persistent cross-deploy history requires a database-backed session store.
+Chat history is stored in a server-side session for up to 24 hours and restored after a page refresh. The rolling memory sends at most the latest 20 user/assistant messages to Groq. Use **New chat** to clear the session. The selected chat model and light/dark theme are remembered in the browser. On Render's free service, session data is temporary and can be lost when the service restarts or redeploys; persistent cross-deploy history requires a database-backed session store.
 
 ## Model selection and fallback
 
-By default, Nano Assistant prefers Groq's `openai/gpt-oss-120b` model. Set `GROQ_MODEL` to choose a different preferred model. For each chat request, the server checks Groq's active model list, tries the preferred model first when available, then tries known alternatives and recently added models if a model is unavailable, deprecated, or rate-limited. Rate limits can apply across your Groq organization, so switching models may not avoid an organization-wide limit.
+The chat model selector is populated from Groq's active models API. By default, Nano Assistant prefers `openai/gpt-oss-120b`; set `GROQ_MODEL` to choose a different default. If the selected model is unavailable, deprecated, or rate-limited, chat tries other active models. Rate limits can apply across your Groq organization, so switching models may not avoid an organization-wide limit.
+
+## Audio tools
+
+- **Audio to text** uploads audio to Groq's transcription endpoint. Active Whisper Large V3 and Whisper Large V3 Turbo models are offered when available. Supported file types include FLAC, MP3, MP4, MPEG, MPGA, M4A, OGG, WAV, and WEBM; files are limited to 24 MB.
+- **Text to audio** uses active Groq Orpheus models with English or Saudi Arabic voices. Speech input is limited to 200 characters, matching Groq's current speech endpoint limit.
+- The app does not generate images: Groq currently documents image understanding (vision), not an image-generation API. Image features were skipped as selected.
+
+The Groq API key remains server-side. Audio files are sent directly to Groq for processing and are not stored by this app.

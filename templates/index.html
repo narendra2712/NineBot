@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f5f5f2">
     <title>Nano Assistant</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=5) }}">
+    <script>
+      try {
+        document.documentElement.dataset.theme =
+          localStorage.getItem("nano-theme") === "dark" ? "dark" : "light";
+      } catch {
+        document.documentElement.dataset.theme = "light";
+      }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=6) }}">
   </head>
   <body>
     <main class="app-shell">
@@ -25,51 +33,176 @@
           </span>
           <span>Nano Assistant</span>
         </a>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to dark mode">
+          <svg class="theme-icon theme-icon-dark" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.2 15.3A8.5 8.5 0 0 1 8.7 3.8 8.5 8.5 0 1 0 20.2 15.3Z"></path>
+          </svg>
+          <svg class="theme-icon theme-icon-light" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path>
+          </svg>
+          <span id="theme-label">Dark mode</span>
+        </button>
       </header>
 
-      <section class="chat-panel" aria-label="Chat">
-        <div class="welcome" id="welcome">
-          <div class="welcome-icon" aria-hidden="true">
-            <svg viewBox="0 0 40 40" focusable="false">
-              <g class="logo-orbit">
-                <ellipse cx="20" cy="20" rx="13" ry="5.5" transform="rotate(45 20 20)"></ellipse>
-                <ellipse cx="20" cy="20" rx="13" ry="5.5" transform="rotate(-45 20 20)"></ellipse>
-              </g>
-              <path class="logo-core" d="m20 14 6 6-6 6-6-6z"></path>
-              <circle class="logo-particle" cx="20" cy="6.5" r="1.6"></circle>
-              <circle class="logo-particle" cx="31.7" cy="26.8" r="1.6"></circle>
-              <circle class="logo-particle" cx="8.3" cy="26.8" r="1.6"></circle>
-            </svg>
-          </div>
-          <p class="eyebrow">NANO ASSISTANT</p>
-          <h1>What can I help with?</h1>
-          <p class="welcome-copy">Ask a question to start a conversation.</p>
-          <div class="suggestions">
-            <button class="suggestion" type="button">Explain a tricky idea simply</button>
-            <button class="suggestion" type="button">Help me write something</button>
-            <button class="suggestion" type="button">Brainstorm a few solutions</button>
-          </div>
-        </div>
-        <div class="messages" id="messages" aria-live="polite" aria-label="Conversation"></div>
-        <div class="error-banner" id="error" role="alert" hidden></div>
+      <section class="intro">
+        <p class="eyebrow">YOUR AI WORKSPACE</p>
+        <h1>Think, listen, create.</h1>
+        <p class="intro-copy">Chat with flexible Groq models, transcribe audio, or turn text into speech.</p>
       </section>
 
-      <form class="composer" id="chat-form">
-        <label class="visually-hidden" for="prompt">Message</label>
-        <textarea id="prompt" name="prompt" rows="1" maxlength="12000"
-          placeholder="Message Nano Assistant..." required></textarea>
-        <div class="composer-footer">
-          <span class="privacy-note">Your API key stays on this computer.</span>
-          <button class="send-button" id="send" type="submit" aria-label="Send message">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
-          </button>
+      <nav class="mode-switcher" role="tablist" aria-label="Choose a tool">
+        <button class="mode-tab active" id="chat-tab" type="button" role="tab"
+          aria-selected="true" aria-controls="chat-view" data-view="chat-view" tabindex="0">
+          <span class="mode-icon" aria-hidden="true">✳</span> Chat
+        </button>
+        <button class="mode-tab" id="transcribe-tab" type="button" role="tab"
+          aria-selected="false" aria-controls="transcribe-view" data-view="transcribe-view" tabindex="-1">
+          <span class="mode-icon" aria-hidden="true">♫</span> Audio to text
+        </button>
+        <button class="mode-tab" id="speech-tab" type="button" role="tab"
+          aria-selected="false" aria-controls="speech-view" data-view="speech-view" tabindex="-1">
+          <span class="mode-icon" aria-hidden="true">◖</span> Text to audio
+        </button>
+      </nav>
+
+      <div class="error-banner" id="error" role="alert" hidden></div>
+
+      <section class="tool-view active" id="chat-view" role="tabpanel" aria-labelledby="chat-tab">
+        <div class="tool-heading">
+          <div>
+            <p class="eyebrow">CONVERSATION</p>
+            <h2>Chat with Nano</h2>
+          </div>
+          <label class="model-control">
+            <span>Chat model</span>
+            <select id="chat-model" aria-label="Chat model" disabled></select>
+          </label>
         </div>
-      </form>
-      <footer class="page-footer">
-        <span>Responses may be inaccurate. Verify important information.</span>
-        <button id="clear" class="clear-button" type="button">New chat</button>
-      </footer>
+
+        <section class="chat-panel" aria-label="Chat">
+          <div class="welcome" id="welcome">
+            <div class="welcome-icon" aria-hidden="true">
+              <svg viewBox="0 0 40 40" focusable="false">
+                <g class="logo-orbit">
+                  <ellipse cx="20" cy="20" rx="13" ry="5.5" transform="rotate(45 20 20)"></ellipse>
+                  <ellipse cx="20" cy="20" rx="13" ry="5.5" transform="rotate(-45 20 20)"></ellipse>
+                </g>
+                <path class="logo-core" d="m20 14 6 6-6 6-6-6z"></path>
+                <circle class="logo-particle" cx="20" cy="6.5" r="1.6"></circle>
+                <circle class="logo-particle" cx="31.7" cy="26.8" r="1.6"></circle>
+                <circle class="logo-particle" cx="8.3" cy="26.8" r="1.6"></circle>
+              </svg>
+            </div>
+            <p class="eyebrow">NANO ASSISTANT</p>
+            <h2>What can I help with?</h2>
+            <p class="welcome-copy">Choose a model, ask a question, and get started.</p>
+            <div class="suggestions">
+              <button class="suggestion" type="button">Explain a tricky idea simply</button>
+              <button class="suggestion" type="button">Help me write something</button>
+              <button class="suggestion" type="button">Brainstorm a few solutions</button>
+            </div>
+          </div>
+          <div class="messages" id="messages" aria-live="polite" aria-label="Conversation"></div>
+        </section>
+
+        <form class="composer" id="chat-form">
+          <label class="visually-hidden" for="prompt">Message</label>
+          <textarea id="prompt" name="prompt" rows="1" maxlength="12000"
+            placeholder="Message Nano Assistant..." required></textarea>
+          <div class="composer-footer">
+            <span class="privacy-note">Your conversation stays in this browser session.</span>
+            <button class="send-button" id="send" type="submit" aria-label="Send message" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
+            </button>
+          </div>
+        </form>
+        <div class="panel-footer">
+          <span>Responses may be inaccurate. Verify important information.</span>
+          <button id="clear" class="text-button" type="button" disabled>New chat</button>
+        </div>
+      </section>
+
+      <section class="tool-view utility-view" id="transcribe-view" role="tabpanel" aria-labelledby="transcribe-tab" hidden>
+        <div class="tool-heading">
+          <div>
+            <p class="eyebrow">SPEECH RECOGNITION</p>
+            <h2>Audio to text</h2>
+          </div>
+          <label class="model-control">
+            <span>Transcription model</span>
+            <select id="transcription-model" aria-label="Transcription model" disabled></select>
+          </label>
+        </div>
+        <p class="utility-copy">Upload a recording and get a readable transcript in seconds.</p>
+        <form class="utility-card" id="transcribe-form">
+          <label class="upload-zone" for="audio-file">
+            <span class="upload-icon" aria-hidden="true">↑</span>
+            <strong id="file-name">Choose an audio file</strong>
+            <span>MP3, WAV, M4A, OGG, FLAC, MP4 or WEBM · up to 24 MB</span>
+          </label>
+          <input class="visually-hidden" id="audio-file" type="file"
+            accept=".flac,.mp3,.mp4,.mpeg,.mpga,.m4a,.ogg,.wav,.webm,audio/*,video/mp4">
+          <div class="form-row">
+            <label class="model-control language-control">
+              <span>Language (optional)</span>
+              <select id="audio-language">
+                <option value="">Auto detect</option>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="hi">Hindi</option>
+                <option value="it">Italian</option>
+                <option value="ja">Japanese</option>
+                <option value="pt">Portuguese</option>
+                <option value="zh">Chinese</option>
+              </select>
+            </label>
+            <button class="primary-button" id="transcribe-button" type="submit" disabled>
+              Transcribe audio
+            </button>
+          </div>
+          <div class="result-block" id="transcription-result" hidden>
+            <div class="result-heading">
+              <span>Transcript</span>
+              <button class="text-button" id="send-transcript" type="button">Continue in chat</button>
+            </div>
+            <textarea id="transcription-text" rows="7" readonly aria-label="Transcription result"></textarea>
+          </div>
+        </form>
+      </section>
+
+      <section class="tool-view utility-view" id="speech-view" role="tabpanel" aria-labelledby="speech-tab" hidden>
+        <div class="tool-heading">
+          <div>
+            <p class="eyebrow">VOICE STUDIO</p>
+            <h2>Text to audio</h2>
+          </div>
+          <label class="model-control">
+            <span>Speech model</span>
+            <select id="speech-model" aria-label="Speech model" disabled></select>
+          </label>
+        </div>
+        <p class="utility-copy">Choose a voice and create natural-sounding speech from your text.</p>
+        <form class="utility-card" id="speech-form">
+          <label class="field-label" for="speech-text">What should Nano say?</label>
+          <textarea id="speech-text" rows="5" maxlength="200"
+            placeholder="Type up to 200 characters..." required></textarea>
+          <div class="form-row speech-options">
+            <label class="model-control voice-control">
+              <span>Voice</span>
+              <select id="speech-voice" aria-label="Speech voice"></select>
+            </label>
+            <span class="character-count" id="character-count">0 / 200</span>
+            <button class="primary-button" id="speech-button" type="submit" disabled>
+              Generate speech
+            </button>
+          </div>
+          <audio class="audio-player" id="speech-player" controls hidden></audio>
+        </form>
+      </section>
     </main>
-    <script src="{{ url_for('static', filename='chat.js', v=5) }}" defer></script>
+    <script src="{{ url_for('static', filename='chat.js', v=7) }}" defer></script>
   </body>
 </html>
