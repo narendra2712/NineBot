@@ -10,6 +10,6 @@ services:
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
-        value: openai/gpt-oss-20b
+        value: openai/gpt-oss-120b
       - key: SYSTEM_PROMPT
         value: You are a helpful assistant. Answer clearly and accurately.

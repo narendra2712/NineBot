@@ -34,3 +34,7 @@ A small Groq-powered chat web app built with Flask.
 4. Deploy the `ninebot` web service. Render provides its public URL after the deploy succeeds.
 
 The Groq API key is read on the server and is not sent to the browser. This app uses Groq-hosted inference and prompt-based behavior; it does not fine-tune model weights.
+
+## Model selection and fallback
+
+By default, NineBot prefers Groq's `openai/gpt-oss-120b` model. Set `GROQ_MODEL` to choose a different preferred model. For each chat request, the server checks Groq's active model list, tries the preferred model first when available, then tries known alternatives and recently added models if a model is unavailable, deprecated, or rate-limited. Rate limits can apply across your Groq organization, so switching models may not avoid an organization-wide limit.
