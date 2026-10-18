@@ -1,4 +1,4 @@
-# NineBot
+# Nano Assistant
 
 A small Groq-powered chat web app built with Flask.
 
@@ -39,4 +39,4 @@ Chat history is stored in a server-side session for up to 24 hours and restored 
 
 ## Model selection and fallback
 
-By default, NineBot prefers Groq's `openai/gpt-oss-120b` model. Set `GROQ_MODEL` to choose a different preferred model. For each chat request, the server checks Groq's active model list, tries the preferred model first when available, then tries known alternatives and recently added models if a model is unavailable, deprecated, or rate-limited. Rate limits can apply across your Groq organization, so switching models may not avoid an organization-wide limit.
+By default, Nano Assistant prefers Groq's `openai/gpt-oss-120b` model. Set `GROQ_MODEL` to choose a different preferred model. For each chat request, the server checks Groq's active model list, tries the preferred model first when available, then tries known alternatives and recently added models if a model is unavailable, deprecated, or rate-limited. Rate limits can apply across your Groq organization, so switching models may not avoid an organization-wide limit.

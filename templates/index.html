@@ -4,28 +4,44 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f5f5f2">
-    <title>NineBot</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=4) }}">
+    <title>Nano Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v=5) }}">
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
-        <a class="brand" href="/" aria-label="NineBot home">
+        <a class="brand" href="/" aria-label="Nano Assistant home">
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 40 40" focusable="false">
-              <circle class="logo-orbit" cx="20" cy="20" r="16.5"></circle>
-              <path class="logo-letter" d="M12 28V12l16 16V12"></path>
-              <path class="logo-spark" d="M30 8V4m-2 2h4"></path>
+              <g class="logo-orbit">
+                <ellipse cx="20" cy="20" rx="13" ry="5.5" transform="rotate(45 20 20)"></ellipse>
+                <ellipse cx="20" cy="20" rx="13" ry="5.5" transform="rotate(-45 20 20)"></ellipse>
+              </g>
+              <path class="logo-core" d="m20 14 6 6-6 6-6-6z"></path>
+              <circle class="logo-particle" cx="20" cy="6.5" r="1.6"></circle>
+              <circle class="logo-particle" cx="31.7" cy="26.8" r="1.6"></circle>
+              <circle class="logo-particle" cx="8.3" cy="26.8" r="1.6"></circle>
             </svg>
           </span>
-          <span>NineBot</span>
+          <span>Nano Assistant</span>
         </a>
       </header>
 
       <section class="chat-panel" aria-label="Chat">
         <div class="welcome" id="welcome">
-          <div class="welcome-icon" aria-hidden="true">✳</div>
-          <p class="eyebrow">GROQ-POWERED ASSISTANT</p>
+          <div class="welcome-icon" aria-hidden="true">
+            <svg viewBox="0 0 40 40" focusable="false">
+              <g class="logo-orbit">
+                <ellipse cx="20" cy="20" rx="13" ry="5.5" transform="rotate(45 20 20)"></ellipse>
+                <ellipse cx="20" cy="20" rx="13" ry="5.5" transform="rotate(-45 20 20)"></ellipse>
+              </g>
+              <path class="logo-core" d="m20 14 6 6-6 6-6-6z"></path>
+              <circle class="logo-particle" cx="20" cy="6.5" r="1.6"></circle>
+              <circle class="logo-particle" cx="31.7" cy="26.8" r="1.6"></circle>
+              <circle class="logo-particle" cx="8.3" cy="26.8" r="1.6"></circle>
+            </svg>
+          </div>
+          <p class="eyebrow">NANO ASSISTANT</p>
           <h1>What can I help with?</h1>
           <p class="welcome-copy">Ask a question to start a conversation.</p>
           <div class="suggestions">
@@ -41,7 +57,7 @@
       <form class="composer" id="chat-form">
         <label class="visually-hidden" for="prompt">Message</label>
         <textarea id="prompt" name="prompt" rows="1" maxlength="12000"
-          placeholder="Message NineBot..." required></textarea>
+          placeholder="Message Nano Assistant..." required></textarea>
         <div class="composer-footer">
           <span class="privacy-note">Your API key stays on this computer.</span>
           <button class="send-button" id="send" type="submit" aria-label="Send message">
