@@ -1,0 +1,6 @@
+groq
+python-dotenv
+Flask
+Markdown
+bleach
+gunicorn

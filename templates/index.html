@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f5f2">
+    <title>Groq Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Groq Chat home">
+          <span class="brand-mark" aria-hidden="true">G</span>
+          <span>Groq Chat</span>
+        </a>
+        <div class="model-pill"><span class="status-dot"></span>{{ model }}</div>
+      </header>
+
+      <section class="chat-panel" aria-label="Chat">
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon" aria-hidden="true">✳</div>
+          <p class="eyebrow">GROQ-POWERED ASSISTANT</p>
+          <h1>What can I help with?</h1>
+          <p class="welcome-copy">Ask a question to start a conversation.</p>
+          <div class="suggestions">
+            <button class="suggestion" type="button">Explain a tricky idea simply</button>
+            <button class="suggestion" type="button">Help me write something</button>
+            <button class="suggestion" type="button">Brainstorm a few solutions</button>
+          </div>
+        </div>
+        <div class="messages" id="messages" aria-live="polite" aria-label="Conversation"></div>
+        <div class="error-banner" id="error" role="alert" hidden></div>
+      </section>
+
+      <form class="composer" id="chat-form">
+        <label class="visually-hidden" for="prompt">Message</label>
+        <textarea id="prompt" name="prompt" rows="1" maxlength="12000"
+          placeholder="Message Groq Chat..." required></textarea>
+        <div class="composer-footer">
+          <span class="privacy-note">Your API key stays on this computer.</span>
+          <button class="send-button" id="send" type="submit" aria-label="Send message">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
+          </button>
+        </div>
+      </form>
+      <footer class="page-footer">
+        <span>Responses may be inaccurate. Verify important information.</span>
+        <button id="clear" class="clear-button" type="button">New chat</button>
+      </footer>
+    </main>
+    <script src="{{ url_for('static', filename='chat.js', v=3) }}" defer></script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ninebot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: SYSTEM_PROMPT
+        value: You are a helpful assistant. Answer clearly and accurately.
