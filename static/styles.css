@@ -358,6 +358,25 @@ select:disabled { opacity: .62; cursor: wait; }
 }
 .message.user .translated-content { border-radius: 15px 5px 15px 15px; }
 
+.response-audio-tools { margin-top: 9px; }
+.response-audio-button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-soft);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.response-audio-button:hover:not(:disabled) { border-color: var(--line-strong); background: var(--surface-muted); }
+.response-audio-button:disabled { opacity: .58; cursor: wait; }
+.response-audio-translation { margin-top: 9px; }
+.response-audio-translation[hidden] { display: none; }
+.audio-status { margin: 7px 2px 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+
 .composer {
   width: 100%;
   padding: 12px 13px 9px 16px;

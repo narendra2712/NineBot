@@ -39,6 +39,8 @@ Chat history is stored in a server-side session for up to 24 hours and restored 
 
 Use **Translate chat to Telugu** to show a Telugu translation under each original message without changing the saved conversation. Enable **Telugu replies** to have future assistant responses written in Telugu; this preference is stored in the current server-side browser session. Both features use the selected Groq chat model, and translation is limited to conversations with up to 30,000 characters.
 
+Each assistant response also has **Translate & play Telugu audio**. The Telugu translation is generated with the selected Groq chat model, then spoken using a Telugu voice installed in the user's browser/device. Groq's hosted voices do not currently include Telugu; if no Telugu browser voice is installed, the translated text is still shown with setup guidance and can be played after adding a device voice.
+
 ## Model selection and fallback
 
 The chat model selector is populated from Groq's active models API. By default, Nano Assistant prefers `openai/gpt-oss-120b`; set `GROQ_MODEL` to choose a different default. If the selected model is unavailable, deprecated, or rate-limited, chat tries other active models. Rate limits can apply across your Groq organization, so switching models may not avoid an organization-wide limit.

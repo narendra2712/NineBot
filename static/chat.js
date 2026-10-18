@@ -13,6 +13,7 @@ const speechModel = document.querySelector("#speech-model");
 const speechVoice = document.querySelector("#speech-voice");
 const conversation = [];
 let currentTranslations = null;
+let activeAudioButton = null;
 
 function showError(message) {
   errorBanner.textContent = message;
@@ -68,7 +69,7 @@ document.querySelector("#theme-toggle").addEventListener("click", () => {
 });
 setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
 
-function addMessage(role, content) {
+function addMessage(role, content, withTeluguAudio = false) {
   const message = document.createElement("article");
   message.className = `message ${role}`;
 
@@ -82,8 +83,140 @@ function addMessage(role, content) {
 
   message.append(label, text);
   messagesElement.append(message);
+  if (role === "assistant" && withTeluguAudio) {
+    addTeluguAudioControl(text, content);
+  }
   message.scrollIntoView({ behavior: "smooth", block: "end" });
   return text;
+}
+
+function getInstalledTeluguVoice() {
+  if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+    return Promise.reject(
+      new Error("This browser does not support speech playback. Try a browser with Web Speech support."),
+    );
+  }
+  const synthesis = window.speechSynthesis;
+  const findVoice = () =>
+    synthesis.getVoices().find((voice) => /^te(?:-|$)/i.test(voice.lang)) || null;
+  const voice = findVoice();
+  if (voice) return Promise.resolve(voice);
+
+  return new Promise((resolve) => {
+    const timer = window.setTimeout(() => {
+      synthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      resolve(findVoice());
+    }, 1500);
+    function onVoicesChanged() {
+      const loadedVoice = findVoice();
+      if (loadedVoice) {
+        window.clearTimeout(timer);
+        synthesis.removeEventListener("voiceschanged", onVoicesChanged);
+        resolve(loadedVoice);
+      }
+    }
+    synthesis.addEventListener("voiceschanged", onVoicesChanged);
+  });
+}
+
+function stopActiveSpeech() {
+  const previousButton = activeAudioButton;
+  activeAudioButton = null;
+  if (previousButton) previousButton.textContent = "Play Telugu audio";
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+
+function addTeluguAudioControl(messageContent, sourceText) {
+  const message = messageContent.closest(".message");
+  const controls = document.createElement("div");
+  controls.className = "response-audio-tools";
+
+  const button = document.createElement("button");
+  button.className = "response-audio-button";
+  button.type = "button";
+  button.textContent = "Translate & play Telugu audio";
+
+  const translation = document.createElement("div");
+  translation.className = "response-audio-translation";
+  translation.hidden = true;
+
+  const translationText = document.createElement("div");
+  translationText.className = "message-content translated-content";
+
+  const status = document.createElement("div");
+  status.className = "audio-status";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+
+  translation.append(translationText, status);
+  controls.append(button, translation);
+  message.append(controls);
+
+  let translatedText = null;
+  button.addEventListener("click", async () => {
+    if (activeAudioButton === button) {
+      stopActiveSpeech();
+      status.textContent = "Audio stopped.";
+      return;
+    }
+
+    button.disabled = true;
+    hideError();
+    try {
+      if (!translatedText) {
+        button.textContent = "Translating...";
+        const data = await readJson(await fetch("/api/translate-response", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: sourceText, model: chatModel.value }),
+        }));
+        if (typeof data.translation !== "string" || !data.translation.trim()) {
+          throw new Error("The server returned an empty Telugu translation.");
+        }
+        translatedText = data.translation;
+        translationText.textContent = translatedText;
+        translation.hidden = false;
+      }
+      if (!message.isConnected) return;
+
+      button.textContent = "Checking Telugu voice...";
+      const voice = await getInstalledTeluguVoice();
+      if (!message.isConnected) return;
+      if (!voice) {
+        button.textContent = "Play Telugu audio";
+        status.textContent =
+          "Telugu text is ready, but this browser has no Telugu voice installed. Add a Telugu (India) speech voice in your device settings, then try again.";
+        return;
+      }
+
+      status.textContent = "";
+      stopActiveSpeech();
+      const utterance = new SpeechSynthesisUtterance(translatedText);
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+      utterance.rate = 0.95;
+      utterance.onend = () => {
+        if (activeAudioButton === button) {
+          activeAudioButton = null;
+          button.textContent = "Play Telugu audio";
+        }
+      };
+      utterance.onerror = (event) => {
+        if (activeAudioButton !== button || event.error === "canceled") return;
+        activeAudioButton = null;
+        button.textContent = "Play Telugu audio";
+        status.textContent = "Telugu audio playback failed in this browser.";
+      };
+      activeAudioButton = button;
+      button.textContent = "Stop Telugu audio";
+      window.speechSynthesis.speak(utterance);
+    } catch (error) {
+      button.textContent = translatedText ? "Play Telugu audio" : "Translate & play Telugu audio";
+      showError(error.message || "Could not translate this response.");
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
 
 function clearTranslations() {
@@ -183,6 +316,9 @@ async function loadModels() {
     );
     updateSpeechVoices();
     sendButton.disabled = !chatAvailable;
+    messagesElement.querySelectorAll(".response-audio-button").forEach((button) => {
+      button.disabled = !chatAvailable;
+    });
     document.querySelector("#transcribe-button").disabled = catalog.transcription.length === 0;
     document.querySelector("#speech-button").disabled = !speechAvailable;
     if (!chatAvailable) showError("No active Groq chat models are available for this API key.");
@@ -204,7 +340,7 @@ async function restoreHistory() {
         throw new Error("The server returned invalid chat history.");
       }
       conversation.push(message);
-      addMessage(message.role, message.content);
+      addMessage(message.role, message.content, message.role === "assistant");
     }
     welcome.hidden = conversation.length > 0;
     translateButton.disabled = conversation.length === 0;
@@ -278,6 +414,7 @@ clearButton.addEventListener("click", async () => {
   hideError();
   try {
     await readJson(await fetch("/api/history", { method: "DELETE" }));
+    stopActiveSpeech();
     conversation.length = 0;
     messagesElement.replaceChildren();
     clearTranslations();
@@ -355,6 +492,7 @@ form.addEventListener("submit", async (event) => {
 
   welcome.hidden = true;
   hideError();
+  stopActiveSpeech();
   clearTranslations();
   translateButton.disabled = true;
   conversation.push({ role: "user", content });
@@ -380,6 +518,7 @@ form.addEventListener("submit", async (event) => {
     } else {
       pending.textContent = data.reply;
     }
+    addTeluguAudioControl(pending, data.reply);
     conversation.push({ role: "assistant", content: data.reply });
     if (Array.isArray(data.messages)) {
       conversation.splice(0, conversation.length, ...data.messages);
